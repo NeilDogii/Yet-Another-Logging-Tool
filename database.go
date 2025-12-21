@@ -40,14 +40,13 @@ func InitDB() (*sql.DB, error) {
         hostname TEXT DEFAULT 'localhost',
         environment TEXT DEFAULT 'development',
         metadata TEXT DEFAULT '{}'
-    )
-		CREATE INDEX idx_timestamp ON logs(timestamp);
-		CREATE INDEX idx_level ON logs(level);
-		CREATE INDEX idx_source ON logs(source);
-		CREATE INDEX idx_hostname ON logs(hostname);
-		CREATE INDEX idx_environment ON logs(environment);
-
-		CREATE INDEX idx_level_timestamp ON logs(level, timestamp);
+    );
+		CREATE INDEX IF NOT EXISTS idx_timestamp ON logs(timestamp);
+		CREATE INDEX IF NOT EXISTS idx_level ON logs(level);
+		CREATE INDEX IF NOT EXISTS idx_source ON logs(source);
+		CREATE INDEX IF NOT EXISTS idx_hostname ON logs(hostname);
+		CREATE INDEX IF NOT EXISTS idx_environment ON logs(environment);
+		CREATE INDEX IF NOT EXISTS idx_level_timestamp ON logs(level, timestamp);
 `)
 
 	if err != nil {
