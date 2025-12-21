@@ -41,6 +41,13 @@ func InitDB() (*sql.DB, error) {
         environment TEXT DEFAULT 'development',
         metadata TEXT DEFAULT '{}'
     )
+		CREATE INDEX idx_timestamp ON logs(timestamp);
+		CREATE INDEX idx_level ON logs(level);
+		CREATE INDEX idx_source ON logs(source);
+		CREATE INDEX idx_hostname ON logs(hostname);
+		CREATE INDEX idx_environment ON logs(environment);
+
+		CREATE INDEX idx_level_timestamp ON logs(level, timestamp);
 `)
 
 	if err != nil {
