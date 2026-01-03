@@ -30,6 +30,12 @@ func InitDB() (*sql.DB, error) {
 		return nil, err
 	}
 
+	// Enable WAL mode for better concurrency
+	_, err = db.Exec("PRAGMA journal_mode=WAL;")
+	if err != nil {
+		return nil, err
+	}
+
 	_, err = db.Exec(`
     CREATE TABLE IF NOT EXISTS logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
