@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
@@ -55,13 +56,24 @@ func APIInit(db *sql.DB) {
 
 		return c.Status(201).JSON(fiber.Map{"status": "log saved"})
 	})
-
 	app.Get("/api/logs", func(c *fiber.Ctx) error {
-		logs, err := GetLogs(db)
+		pageQuery := c.Query("page")
+		page := 0
+		if pageQuery != "" {
+			page, _ = strconv.Atoi(pageQuery)
+		}
+		logs, err := GetLogs(db, page)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 		}
-		return c.JSON(logs)
+		paginationInfo, err := GetPaginationInfo(db)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.JSON(fiber.Map{
+			"data": logs,
+			"meta": paginationInfo,
+		})
 	})
 
 	app.Listen(":3000")

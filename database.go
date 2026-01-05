@@ -20,6 +20,8 @@ type LogEntry struct {
 	Metadata    map[string]interface{} `db:"metadata"`
 }
 
+const FETCH_LIMIT = 100
+
 func InitDB() (*sql.DB, error) {
 	db, err := sql.Open("sqlite", "logs.db")
 	if err != nil {
@@ -77,8 +79,15 @@ func InsertLog(db *sql.DB, level, message, source, hostname, environment string,
 	return err
 }
 
-func GetLogs(db *sql.DB) ([]LogEntry, error) {
-	rows, err := db.Query(`SELECT id, timestamp, level, message, source, hostname, environment, metadata FROM logs`)
+func GetLogs(db *sql.DB, page ...int) ([]LogEntry, error) {
+	pageNum := 0
+	if len(page) > 0 {
+		pageNum = page[0]
+	}
+
+	offset := pageNum * FETCH_LIMIT
+
+	rows, err := db.Query(`SELECT id, timestamp, level, message, source, hostname, environment, metadata FROM logs LIMIT ? OFFSET ?`, FETCH_LIMIT, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -116,4 +125,37 @@ func GetLogs(db *sql.DB) ([]LogEntry, error) {
 	}
 
 	return logs, rows.Err()
+}
+
+type PaginationInfo struct {
+	TotalLogs   int64 `json:"total_logs"`
+	TotalPages  int   `json:"total_pages"`
+	LogsPerPage int   `json:"logs_per_page"`
+}
+
+func GetPaginationInfo(db *sql.DB) (*PaginationInfo, error) {
+	logCount, err := db.Query(`SELECT count(*) FROM logs`)
+	if err != nil {
+		return nil, err
+	}
+	defer logCount.Close()
+
+	var totalLogs int64
+	if logCount.Next() {
+		err = logCount.Scan(&totalLogs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	totalPages := int(totalLogs) / FETCH_LIMIT
+	if int(totalLogs)%FETCH_LIMIT != 0 {
+		totalPages++
+	}
+
+	return &PaginationInfo{
+		TotalLogs:   totalLogs,
+		TotalPages:  totalPages,
+		LogsPerPage: FETCH_LIMIT,
+	}, nil
 }
